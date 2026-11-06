@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AquaSim · Simulador de tratamiento y recuperación de la calidad del agua</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <header class="top">
+    <div class="wrap bar">
+      <a class="logo" href="#inicio"><i data-lucide="droplets"></i><span><b>AquaSim</b><small>Simulador de tratamiento y
+            recuperación de la calidad del agua</small></span></a>
+      <span class="chip"><i data-lucide="flask-conical"></i> Simulación matemática</span>
+      <nav><a href="#simulador">Simulador</a><a href="#resultados">Resultados</a><a href="#matematica">Matemática</a><a
+          href="#aprende">Aprende</a><a href="#interpretacion">Interpretación</a></nav>
+    </div>
+  </header>
+
+  <section id="inicio" class="hero">
+    <div class="wrap hero-g">
+      <div>
+        <h1>Comprende y simula la recuperación de la calidad del agua</h1>
+        <p>Explora cómo diferentes alternativas de tratamiento pueden reducir la concentración de contaminantes mediante
+          modelos matemáticos y métodos numéricos.</p>
+        <a class="btn" href="#simulador">Ir al simulador <i data-lucide="arrow-down"></i></a>
+        <p class="warn-s">Herramienta académica: no certifica potabilidad ni sustituye análisis de laboratorio.</p>
+      </div>
+      <svg viewBox="0 0 360 240" class="ill" aria-label="Ilustración de tratamiento de agua">
+        <defs>
+          <linearGradient id="g" x1="0" x2="1">
+            <stop offset="0" stop-color="#1479A8" />
+            <stop offset="1" stop-color="#21B6B0" />
+          </linearGradient>
+        </defs>
+        <rect x="20" y="60" width="90" height="120" rx="10" fill="none" stroke="#21B6B0" stroke-width="3" />
+        <rect x="24" y="110" width="82" height="66" rx="6" fill="#8a6d3b" opacity=".7" />
+        <path d="M110 140h50" stroke="#21B6B0" stroke-width="3" />
+        <rect x="160" y="70" width="80" height="140" rx="10" fill="none" stroke="#21B6B0" stroke-width="3" />
+        <rect x="164" y="110" width="72" height="26" fill="#3b4f5e" />
+        <rect x="164" y="136" width="72" height="26" fill="#6b7f8e" />
+        <rect x="164" y="162" width="72" height="44" rx="6" fill="url(#g)" opacity=".8" />
+        <path d="M240 150h40" stroke="#21B6B0" stroke-width="3" />
+        <path d="M310 90c-22 30-30 46-30 64a30 30 0 0 0 60 0c0-18-8-34-30-64z" fill="url(#g)" />
+        <path d="M20 215q20-10 40 0t40 0 40 0 40 0 40 0 40 0 40 0" stroke="#39A878" stroke-width="3" fill="none" />
+        <polyline points="20,40 70,22 120,32 170,14 220,26 270,10" fill="none" stroke="#39A878" stroke-width="2.5" />
+      </svg>
+    </div>
+  </section>
+
+  <section id="simulador" class="dark">
+    <div class="wrap">
+      <h2><i data-lucide="activity"></i> Panel de simulación</h2>
+      <div id="err" class="errbox" hidden></div>
+      <div class="dash">
+        <aside class="pan cfg">
+          <label>Tipo de tratamiento
+            <select id="trat">
+              <option value="carbon">1 · Adsorción con carbón activado</option>
+              <option value="coag">2 · Coagulación y floculación</option>
+              <option value="bio">3 · Proceso biológico</option>
+            </select></label>
+          <p id="tdesc" class="mut"></p>
+          <p class="hyp"><i data-lucide="alert-triangle"></i> Valores iniciales HIPOTÉTICOS Y DEMOSTRATIVOS; no son
+            datos experimentales.</p>
+          <div class="fg">
+            <label>C₀ (mg/L)<input id="C0" type="number" step="any" value="100"></label>
+            <label>Cₑ (mg/L)<input id="Ce" type="number" step="any"></label>
+            <label>k (h⁻¹)<input id="k" type="number" step="any"></label>
+            <label>Tiempo inicial (h)<input id="t0" type="number" step="any" value="0"></label>
+            <label>Tiempo final (h)<input id="tf" type="number" step="any" value="12"></label>
+            <label>h₁ (h)<input id="h1" type="number" step="any" value="1"></label>
+            <label>h₂ (h)<input id="h2" type="number" step="any" value="0.5"></label>
+          </div>
+          <button id="run" class="btn full">EJECUTAR SIMULACIÓN</button>
+          <button id="reset" class="btn ghost full"><i data-lucide="rotate-ccw"></i> Restaurar valores</button>
+          <p class="mut sm">k y Cₑ se guardan por tratamiento. Si el intervalo no es divisible entre h, el último paso
+            se acorta para llegar exactamente a t final.</p>
+        </aside>
+        <div class="right">
+          <div class="kpis">
+            <div class="kpi amber"><small>Concentración inicial</small><b id="kC0">–</b><span>mg/L</span></div>
+            <div class="kpi blue"><small>Concentración final</small><b id="kCf">–</b><span>mg/L (RK4)</span></div>
+            <div class="kpi teal"><small>Reducción</small><b id="kRed">–</b><span>porcentual</span></div>
+            <div class="kpi green"><small>Tiempo simulado</small><b id="kT">–</b><span>horas</span></div>
+            <div class="kpi deep"><small>Tratamiento</small><b id="kTr" class="sm">–</b><span>seleccionado</span></div>
+          </div>
+          <div class="pan">
+            <div class="phead">
+              <h3>Monitoreo de la fuente (esquema ilustrativo)</h3><span id="mlab" class="mut sm"></span>
+            </div>
+            <svg id="mon" viewBox="0 0 600 300" role="img" aria-label="Mapa esquemático de estaciones"></svg>
+            <input id="tsl" type="range" min="0" max="1000" value="0" aria-label="Tiempo">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="resultados" class="dark res">
+    <div class="wrap">
+      <h2><i data-lucide="bar-chart-3"></i> Resultados</h2>
+      <div class="tools"><label>Resultados con tamaño de paso <select id="hSel"></select></label>
+        <label>Comparación de tratamientos <select id="cmp">
+            <option value="all">Los tres a la vez</option>
+            <option value="one">Solo el seleccionado</option>
+          </select></label>
+        <label class="chk"><input type="checkbox" id="logE"> Escala logarítmica en errores</label>
+      </div>
+      <div class="g2">
+        <div class="pan ch"><canvas id="c1"></canvas></div>
+        <div class="pan ch"><canvas id="c2"></canvas></div>
+        <div class="pan ch"><canvas id="c3"></canvas></div>
+        <div class="pan">
+          <h3>Comparación entre tratamientos</h3>
+          <div id="cards" class="tcards"></div>
+          <p class="mut sm">Mismas C₀ e intervalo para todos. Valores hipotéticos.</p>
+        </div>
+      </div>
+      <div class="pan">
+        <h3>Tabla de resultados</h3>
+        <div class="scroll">
+          <table id="tab">
+            <thead>
+              <tr>
+                <th>Tiempo (h)</th>
+                <th>Analítica</th>
+                <th>Heun</th>
+                <th>RK4</th>
+                <th>Error Heun</th>
+                <th>Error RK4</th>
+                <th>Err. rel. Heun (%)</th>
+                <th>Err. rel. RK4 (%)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="pan">
+          <h3>Procedimiento de las iteraciones (primeros pasos)</h3>
+          <pre id="iter"></pre>
+        </div>
+        <div class="pan">
+          <h3>Efecto del tamaño de paso (error absoluto en t final)</h3>
+          <div class="scroll">
+            <table id="conv">
+              <thead>
+                <tr>
+                  <th>h (h)</th>
+                  <th>Error Heun</th>
+                  <th>Error RK4</th>
+                  <th>Menor error</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p id="convtxt" class="mut sm"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="matematica" class="wrap math">
+    <h2><i data-lucide="sigma"></i> Explicación matemática</h2>
+    <div class="g2">
+      <article class="card">
+        <h3>Ecuación diferencial</h3>
+        $$\frac{dC}{dt}=-k\,(C-C_e),\qquad C(0)=C_0$$
+        <ul>
+          <li><b>C(t)</b>: concentración (mg/L)</li>
+          <li><b>t</b>: tiempo (h)</li>
+          <li><b>k</b>: constante de eliminación (h⁻¹)</li>
+          <li><b>Cₑ</b>: concentración residual de equilibrio (mg/L)</li>
+          <li><b>C₀</b>: concentración inicial (mg/L)</li>
+        </ul>
+        <p>Modelo simplificado: la tasa de eliminación es proporcional a la diferencia entre C y Cₑ. La derivada es
+          negativa mientras C &gt; Cₑ.</p>
+      </article>
+      <article class="card">
+        <h3>Solución analítica (separación de variables)</h3>
+        $$\frac{dC}{C-C_e}=-k\,dt \;\Rightarrow\; \ln|C-C_e|=-kt+K$$
+        $$C(0)=C_0 \;\Rightarrow\; \boxed{C(t)=C_e+(C_0-C_e)e^{-kt}}$$
+        <p>Físicamente, C decae exponencialmente desde C₀ y se aproxima a Cₑ cuando t→∞.</p>
+        <h4>Verificación por sustitución</h4>
+        $$C'(t)=-k(C_0-C_e)e^{-kt}=-k\big(C(t)-C_e\big)$$
+        $$C(0)=C_e+(C_0-C_e)e^{0}=C_0\ \checkmark$$
+      </article>
+      <article class="card">
+        <h3>Método de Heun (RK2)</h3>
+        $$k_1=f(t_n,y_n),\quad k_2=f(t_n+h,\,y_n+hk_1)$$ $$y_{n+1}=y_n+\tfrac{h}{2}(k_1+k_2)$$
+        <p>Aquí f(t,C) = −k(C − Cₑ).</p>
+      </article>
+      <article class="card">
+        <h3>Runge-Kutta clásico de 4.º orden</h3>
+        $$k_1=f(t_n,y_n),\ k_2=f(t_n+\tfrac h2,y_n+\tfrac{h k_1}{2})$$ $$k_3=f(t_n+\tfrac h2,y_n+\tfrac{h k_2}{2}),\
+        k_4=f(t_n+h,y_n+hk_3)$$ $$y_{n+1}=y_n+\tfrac h6(k_1+2k_2+2k_3+k_4)$$
+      </article>
+      <article class="card">
+        <h3>Cálculo de errores</h3>
+        $$E_{abs}=|C_{exacta}-C_{aprox}|\qquad E_{rel}(\%)=\frac{E_{abs}}{|C_{exacta}|}\times100$$
+        <p>Si C_exacta = 0, el error relativo se muestra como N/A. Reducción (%) = (C₀ − C_final)/C₀ × 100 (N/A si C₀ =
+          0).</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="aprende" class="wrap">
+    <h2><i data-lucide="book-open"></i> Aprende con AquaSim</h2>
+    <details class="card">
+      <summary>A. ¿Cuál es el problema que estamos resolviendo?</summary>
+      <p>Muchas comunidades usan fuentes naturales para riego, limpieza y abastecimiento. Si hay contaminación, la
+        calidad no se recupera al instante: depende del contaminante, del tratamiento y de su eficiencia. Estudiar cómo
+        evoluciona la concentración ayuda a comparar alternativas y a proteger el recurso hídrico.</p>
+    </details>
+    <details class="card">
+      <summary>B. ¿Qué estamos modelando?</summary>
+      <p>La concentración de un contaminante (mg de sustancia por litro de agua). Cambia con el tiempo porque el
+        tratamiento lo retiene, lo agrupa para separarlo o lo degrada.</p>
+    </details>
+    <details class="card">
+      <summary>C. ¿Qué es una ecuación diferencial?</summary>
+      <p>Una ecuación que relaciona una variable con su rapidez de cambio. Aquí describe cómo cambia C respecto al
+        tiempo.</p>
+    </details>
+    <details class="card">
+      <summary>D. ¿Qué significa dC/dt = −k(C − Cₑ)?</summary>
+      <p><b>dC/dt</b>: rapidez de cambio de la concentración. <b>k</b>: qué tan rápido actúa el tratamiento. <b>(C −
+          Cₑ)</b>: cuánto falta para llegar al nivel residual. El signo menos indica descenso mientras C &gt; Cₑ. Cuando
+        C = Cₑ, la derivada es cero y el sistema se estabiliza.</p>
+    </details>
+    <details class="card">
+      <summary>E. ¿Qué es la solución analítica?</summary>
+      <p>La solución exacta del modelo, C(t) = Cₑ + (C₀ − Cₑ)e^(−kt). Sirve de referencia para medir el error de los
+        métodos numéricos. El procedimiento completo está en la sección de matemática.</p>
+    </details>
+    <details class="card">
+      <summary>F. ¿Cómo funciona el método de Heun?</summary>
+      <p>Calcula dos pendientes: k₁ al inicio del paso y k₂ al final (usando una predicción de Euler) y avanza con su
+        promedio. Ejemplo con C₀=100, Cₑ=5, k=0.45, h=1: k₁=−42.75; predicción 57.25; k₂=−23.5125;
+        C₁=100+0.5(−42.75−23.5125)=66.8687.</p>
+    </details>
+    <details class="card">
+      <summary>G. ¿Cómo funciona RK4?</summary>
+      <p>Usa cuatro pendientes: k₁ al inicio, k₂ y k₃ en el punto medio (k₂ con k₁ y k₃ con k₂) y k₄ al final. El avance
+        usa el promedio ponderado (k₁ + 2k₂ + 2k₃ + k₄)/6, lo que da mayor precisión.</p>
+    </details>
+    <details class="card">
+      <summary>H. ¿Qué es el tamaño de paso h?</summary>
+      <p>Es el intervalo de tiempo entre dos aproximaciones. Un h menor suele reducir el error porque la pendiente se
+        evalúa con más frecuencia, pero requiere más cálculos. Compruébalo en la tabla de efecto del tamaño de paso.</p>
+    </details>
+    <details class="card">
+      <summary>I. ¿Qué significan el error absoluto y el relativo?</summary>
+      <p>El absoluto es la diferencia en mg/L entre lo exacto y lo aproximado. El relativo lo expresa como porcentaje
+        del valor exacto, útil para comparar magnitudes distintas. Se calculan contra la analítica porque es la
+        referencia exacta.</p>
+    </details>
+    <details class="card" open>
+      <summary>J. ¿Qué podemos concluir?</summary>
+      <p id="concl">Ejecuta la simulación para generar conclusiones.</p>
+    </details>
+  </section>
+
+  <section id="interpretacion" class="wrap">
+    <h2><i data-lucide="leaf"></i> Interpretación ambiental</h2>
+    <div class="g2">
+      <article class="card">
+        <h3>Conclusiones automáticas</h3>
+        <ul id="interp">
+          <li>Ejecuta la simulación para ver la interpretación.</li>
+        </ul>
+      </article>
+      <article class="card">
+        <h3>¿Qué significan estos resultados para nuestra comunidad?</h3>
+        <p>Permiten visualizar qué tan rápido podría bajar un contaminante bajo distintos tratamientos y comparar
+          alternativas antes de decidir con datos reales.</p>
+        <p class="alert"><i data-lucide="alert-triangle"></i> Una reducción de concentración no garantiza por sí sola
+          que el agua sea segura para el consumo humano. Se requieren análisis de laboratorio. Los parámetros son
+          hipotéticos y el modelo es simplificado.</p>
+      </article>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap"><b>AquaSim</b> · Proyecto académico de Métodos Numéricos
+      <p>Herramienta educativa para estudiar EDO de primer orden con los métodos de Heun y RK4. Los parámetros iniciales
+        son hipotéticos y demostrativos.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>
